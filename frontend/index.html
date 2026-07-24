@@ -151,9 +151,7 @@
     box-shadow: 0 0 0 4px rgba(255,107,0,0.12), 0 0 16px rgba(255,107,0,0.55);
   }
 
-  /* Gate: interactive elements look normal but are intercepted via JS */
   .gated{ cursor:pointer; }
-
   .view-hidden{ display:none !important; }
 
   @media (prefers-reduced-motion: reduce){
@@ -267,9 +265,14 @@
   <section id="playgroundSection" class="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 pb-16">
     <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-glow">
 
-      <label for="inputText" class="block text-sm font-semibold text-gray-300 mb-2">
-        النص المراد تلخيصه
-      </label>
+      <div class="flex items-center justify-between mb-2">
+        <label for="inputText" class="block text-sm font-semibold text-gray-300">
+          النص المراد تلخيصه
+        </label>
+        <button id="clearBtn" class="text-xs text-gray-500 hover:text-bb-orangeSoft transition-colors hidden">
+          🗑️ مسح النص
+        </button>
+      </div>
 
       <div id="textareaWrap" class="gated glow-border-focus rounded-2xl border border-bb-line bg-[#0F0F11]">
         <textarea id="inputText" rows="7"
@@ -290,7 +293,7 @@
         </span>
         <span id="btnLoadingContent" class="hidden items-center gap-3">
           <span class="spinner"></span>
-          جاري التلخيص...
+          جاري التلخيص بالذكاء الاصطناعي...
         </span>
       </button>
 
@@ -300,10 +303,15 @@
     </div>
 
     <div id="resultsSection" class="hidden mt-8">
-      <div class="flex items-center gap-3 mb-5">
-        <span class="w-2 h-2 rounded-full bg-bb-orange bullet-dot"></span>
-        <h2 class="font-grotesk font-semibold text-white text-lg">الملخّص المرتّب</h2>
-        <span class="text-xs text-gray-500 mr-1">٤ نقاط رئيسية</span>
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <span class="w-2 h-2 rounded-full bg-bb-orange bullet-dot"></span>
+          <h2 class="font-grotesk font-semibold text-white text-lg">الملخّص المرتّب</h2>
+          <span class="text-xs text-gray-500 mr-1">٤ نقاط رئيسية</span>
+        </div>
+        <button id="copyAllBtn" class="text-xs font-semibold text-bb-orangeSoft hover:text-white px-3 py-1.5 rounded-lg bg-bb-panel border border-bb-line transition-all flex items-center gap-1.5">
+          📋 نسخ الملخص
+        </button>
       </div>
       <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
     </div>
@@ -438,6 +446,7 @@
 
 <script>
   let appState = 'guest';
+  let currentPoints = [];
 
   const navSignInBtn = document.getElementById('navSignInBtn');
   const userChip = document.getElementById('userChip');
@@ -446,6 +455,8 @@
   const textareaWrap = document.getElementById('textareaWrap');
   const inputText = document.getElementById('inputText');
   const summarizeBtn = document.getElementById('summarizeBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const copyAllBtn = document.getElementById('copyAllBtn');
 
   function renderNav(){
     const authed = appState === 'auth';
@@ -466,8 +477,10 @@
     renderNav();
     inputText.value = '';
     charCount.textContent = '٠ حرف';
+    clearBtn.classList.add('hidden');
     resultsSection.classList.add('hidden');
     resultsGrid.innerHTML = '';
+    currentPoints = [];
   }
 
   logoutBtn.addEventListener('click', logOut);
@@ -554,8 +567,19 @@
   const resultsGrid = document.getElementById('resultsGrid');
 
   inputText.addEventListener('input', () => {
-    charCount.textContent = `${inputText.value.length.toLocaleString('ar')} حرف`;
-    if (inputText.value.trim().length > 0) inlineError.classList.add('hidden');
+    const len = inputText.value.length;
+    charCount.textContent = `${len.toLocaleString('ar')} حرف`;
+    clearBtn.classList.toggle('hidden', len === 0);
+    if (len > 0) inlineError.classList.add('hidden');
+  });
+
+  clearBtn.addEventListener('click', () => {
+    inputText.value = '';
+    charCount.textContent = '٠ حرف';
+    clearBtn.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    inlineError.classList.add('hidden');
+    inputText.focus();
   });
 
   function setLoading(v){
@@ -571,8 +595,17 @@
     return div.innerHTML;
   }
 
+  function cleanPointText(str) {
+    if (typeof str !== 'string') return '';
+    return str
+      .replace(/^[\s\-•\*+\d\.\)\(\]]+/, '') // إزالة البادئات مثل * - 1.
+      .replace(/\*\*/g, '')                 // إزالة علامات Markdown bold
+      .trim();
+  }
+
   function renderResults(points){
     resultsGrid.innerHTML = '';
+    currentPoints = points;
     points.forEach((point, i) => {
       const card = document.createElement('div');
       card.className = 'glass-card rounded-2xl p-5 fade-up';
@@ -582,7 +615,7 @@
           <div class="mt-1 shrink-0 w-6 h-6 rounded-full bg-bb-orange/10 border border-bb-orange/50 flex items-center justify-center">
             <span class="w-2 h-2 rounded-full bg-bb-orange bullet-dot"></span>
           </div>
-          <p class="text-sm sm:text-[15px] text-gray-200 leading-7">${point}</p>
+          <p class="text-sm sm:text-[15px] text-gray-200 leading-7 flex-1">${escapeHtml(point)}</p>
         </div>
       `;
       resultsGrid.appendChild(card);
@@ -590,6 +623,16 @@
     resultsSection.classList.remove('hidden');
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  copyAllBtn.addEventListener('click', () => {
+    if (!currentPoints || currentPoints.length === 0) return;
+    const textToCopy = currentPoints.map((p, i) => `${i + 1}. ${p}`).join('\n');
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      const originalText = copyAllBtn.innerHTML;
+      copyAllBtn.innerHTML = '✅ تم النسخ!';
+      setTimeout(() => { copyAllBtn.innerHTML = originalText; }, 2000);
+    });
+  });
 
   async function handleSummarize(){
     if (appState !== 'auth') { openAuth(); return; }
@@ -607,7 +650,6 @@
     setLoading(true);
 
     try {
-      // ✅ تم تعديل المسار هنا إلى /api/summarize-text ليتوافق تماماً مع الـ Backend
       const response = await fetch('https://bb-backend-ic38.onrender.com/api/summarize-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -618,15 +660,23 @@
 
       const data = await response.json();
 
-      let points = data.summary || data.points || data.results || data.data;
-      if (typeof points === 'string') {
-        points = points.split(/\n+/).map(s => s.replace(/^[-•\d.\)\s]+/, '').trim()).filter(Boolean);
+      let pointsData = data.summary || data.points || data.results || data.data || data.text || data.result;
+
+      let points = [];
+      if (Array.isArray(pointsData)) {
+        points = pointsData.map(cleanPointText).filter(Boolean);
+      } else if (typeof pointsData === 'string') {
+        points = pointsData
+          .split(/\n+/)
+          .map(cleanPointText)
+          .filter(Boolean);
       }
-      if (!Array.isArray(points) || points.length === 0) {
+
+      if (points.length === 0) {
         throw new Error('Unexpected response shape');
       }
-      points = points.slice(0, 4).map(escapeHtml);
 
+      points = points.slice(0, 4);
       renderResults(points);
     } catch (err) {
       console.error('BB summarize error:', err);
