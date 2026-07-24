@@ -164,7 +164,6 @@
 
 <body class="bg-bb-black text-gray-200 min-h-screen antialiased">
 
-<!-- ============ NAVBAR ============ -->
 <header class="sticky top-0 z-40 backdrop-blur-xl bg-bb-black/70 border-b border-bb-line">
   <div class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
 
@@ -176,13 +175,11 @@
       <span class="text-[11px] text-gray-500 hidden sm:block mt-1">/ التلخيص الذكي</span>
     </div>
 
-    <!-- Guest nav action -->
     <button id="navSignInBtn"
       class="gated btn-ghost-glow px-5 py-2 rounded-full text-sm font-semibold text-bb-orangeSoft bg-bb-panel/60 hover:text-white transition-colors">
       تسجيل الدخول
     </button>
 
-    <!-- Authenticated nav state -->
     <div id="userChip" class="view-hidden items-center gap-3">
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-bb-panel border border-bb-line">
         <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.6)]"></span>
@@ -204,11 +201,9 @@
     <div class="absolute inset-0 grid-mask"></div>
   </div>
 
-  <!-- ============ HERO ============ -->
   <section class="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 pt-16 sm:pt-20 pb-20">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-10 items-center">
 
-      <!-- Right column: headline + CTA -->
       <div class="text-center lg:text-right order-1">
         <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-bb-orangeSoft bg-bb-orange/10 border border-bb-orange/30 mb-6">
           <span class="w-1.5 h-1.5 rounded-full bg-bb-orange bullet-dot"></span>
@@ -230,7 +225,6 @@
         </button>
       </div>
 
-      <!-- Left column: vertical step guide -->
       <div class="order-2 relative max-w-sm mx-auto lg:mx-0 w-full">
         <div class="relative pr-2">
           <div class="step-line"></div>
@@ -270,7 +264,6 @@
     </div>
   </section>
 
-  <!-- ============ PLAYGROUND (always visible, gated by JS) ============ -->
   <section id="playgroundSection" class="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 pb-16">
     <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-glow">
 
@@ -302,7 +295,7 @@
       </button>
 
       <p id="fetchError" class="hidden text-sm text-red-400 mt-3 text-center">
-        تعذّر الاتصال بالخادم. تأكد أن الخادم يعمل على <span class="font-grotesk" dir="ltr">localhost:5000</span> وحاول مجددًا.
+        تعذّر الاتصال بالخادم. حاول مجددًا بعد قليل.
       </p>
     </div>
 
@@ -317,7 +310,6 @@
   </section>
 </main>
 
-<!-- ============ PRICING SECTION ============ -->
 <section class="relative border-t border-bb-line bg-bb-panel/40">
   <div class="max-w-5xl mx-auto px-5 sm:px-8 py-16">
     <div class="text-center mb-10">
@@ -380,7 +372,6 @@
   © 2026 BB — صُنع بعناية لأتمتة بريدك القادمة.
 </footer>
 
-<!-- ============ AUTH GATE MODAL ============ -->
 <div id="authOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overlay-in">
   <div class="modal-in glass-modal relative w-full max-w-sm rounded-2xl border border-bb-orange/30 shadow-glow p-7">
 
@@ -398,7 +389,6 @@
       </p>
     </div>
 
-    <!-- Google Sign-In -->
     <button id="googleAuthBtn" type="button"
       class="btn-google w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold text-gray-100 mb-4">
       <svg width="18" height="18" viewBox="0 0 48 48" class="shrink-0">
@@ -416,7 +406,6 @@
       <span class="h-px flex-1 bg-bb-line"></span>
     </div>
 
-    <!-- Toggle -->
     <div class="flex items-center justify-center gap-6 mb-5 border-b border-bb-line text-sm font-semibold">
       <button id="tabLogin" class="tab-underline active pb-2.5 text-white transition-colors">تسجيل الدخول</button>
       <button id="tabSignup" class="tab-underline pb-2.5 text-gray-500 hover:text-gray-300 transition-colors">إنشاء حساب</button>
@@ -448,12 +437,6 @@
 </div>
 
 <script>
-  /* =================================================================
-     APP STATE
-     'guest' -> full premium page is visible, but interacting with the
-                CTA / playground opens the gate modal instead of running.
-     'auth'  -> gate is lifted, playground works normally.
-  ================================================================= */
   let appState = 'guest';
 
   const navSignInBtn = document.getElementById('navSignInBtn');
@@ -511,7 +494,6 @@
     document.body.style.overflow = '';
   }
 
-  // Every "gated" trigger point in the page.
   navSignInBtn.addEventListener('click', () => { if (appState !== 'auth') openAuth(); });
   heroCtaBtn.addEventListener('click', () => { if (appState !== 'auth') openAuth(); });
   textareaWrap.addEventListener('click', () => { if (appState !== 'auth') { openAuth(); inputText.blur(); } });
@@ -542,7 +524,6 @@
     authSubmitLoading.classList.toggle('flex', v);
   }
 
-  // Email/password — simulated. Replace with a real API call.
   authForm.addEventListener('submit', (e) => {
     e.preventDefault();
     setAuthSubmitting(true);
@@ -552,7 +533,6 @@
     }, 900);
   });
 
-  // Google sign-in — simulated. Replace with real OAuth.
   googleAuthBtn.addEventListener('click', () => {
     googleAuthBtn.disabled = true;
     const original = googleAuthBtn.innerHTML;
@@ -612,7 +592,6 @@
   }
 
   async function handleSummarize(){
-    // Gate: guests are intercepted before anything else runs.
     if (appState !== 'auth') { openAuth(); return; }
 
     const text = inputText.value.trim();
@@ -628,7 +607,8 @@
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/summarize', {
+      // تم التعديل هنا ليربط مع Render بشكل مباشر
+      const response = await fetch('https://bb-backend-ic38.onrender.com/api/summarize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
