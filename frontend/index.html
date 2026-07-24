@@ -607,8 +607,8 @@
     setLoading(true);
 
     try {
-      // تم التعديل هنا ليربط مع Render بشكل مباشر
-      const response = await fetch('https://bb-backend-ic38.onrender.com/api/summarize', {
+      // ✅ تم تعديل المسار هنا إلى /api/summarize-text ليتوافق تماماً مع الـ Backend
+      const response = await fetch('https://bb-backend-ic38.onrender.com/api/summarize-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
