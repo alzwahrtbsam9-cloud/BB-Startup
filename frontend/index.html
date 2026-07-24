@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BB — نلخص لك كل إيميلاتك بلمحة عين</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bb: {
+            black: '#0A0A0B',
+            panel: '#131315',
+            card: '#17171A',
+            line: '#26262A',
+            orange: '#FF6B00',
+            orangeSoft: '#FF8A3D',
+          }
+        },
+        fontFamily: {
+          cairo: ['Cairo', 'sans-serif'],
+          grotesk: ['"Space Grotesk"', 'sans-serif'],
+        },
+        boxShadow: {
+          glow: '0 0 0 1px rgba(255,107,0,0.35), 0 0 24px rgba(255,107,0,0.25), 0 0 60px rgba(255,107,0,0.12)',
+          glowSm: '0 0 0 1px rgba(255,107,0,0.3), 0 0 14px rgba(255,107,0,0.25)',
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html, body { background:#0A0A0B; }
+  body { font-family: 'Cairo', sans-serif; }
+  .font-grotesk { font-family: 'Space Grotesk', sans-serif; }
+
+  .ember-field{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+  .ember{
+    position:absolute; border-radius:9999px; filter: blur(90px);
+    background: radial-gradient(circle at 30% 30%, rgba(255,107,0,0.5), rgba(255,107,0,0) 70%);
+    animation: breathe 9s ease-in-out infinite;
+  }
+  .ember.two{
+    background: radial-gradient(circle at 60% 40%, rgba(255,138,61,0.32), rgba(255,107,0,0) 70%);
+    animation-delay: 3s; animation-duration: 11s;
+  }
+  @keyframes breathe{
+    0%, 100% { transform: scale(1) translateY(0); opacity:.5; }
+    50% { transform: scale(1.15) translateY(-10px); opacity:.8; }
+  }
+
+  .grid-mask{
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 42px 42px;
+    -webkit-mask-image: radial-gradient(ellipse 65% 60% at 50% 15%, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 65% 60% at 50% 15%, black 30%, transparent 75%);
+  }
+
+  ::selection{ background: rgba(255,107,0,0.35); color:#fff; }
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-track{ background:#0A0A0B; }
+  ::-webkit-scrollbar-thumb{ background:#2a2a2e; border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#FF6B00; }
+
+  textarea:focus{ outline:none; }
+
+  .glow-border-focus{ transition: box-shadow .35s ease, border-color .35s ease; }
+  .glow-border-focus:focus-within{
+    border-color: rgba(255,107,0,0.6);
+    box-shadow: 0 0 0 1px rgba(255,107,0,0.35), 0 0 30px rgba(255,107,0,0.22), 0 0 80px rgba(255,107,0,0.08);
+  }
+
+  @keyframes spin-smooth{ to { transform: rotate(360deg); } }
+  .spinner{ width:20px; height:20px; border-radius:9999px; border: 2.5px solid rgba(255,255,255,0.25); border-top-color:#fff; animation: spin-smooth .7s linear infinite; }
+  .spinner-orange{ width:16px; height:16px; border-radius:9999px; border: 2px solid rgba(255,107,0,0.25); border-top-color:#FF6B00; animation: spin-smooth .7s linear infinite; }
+
+  @keyframes fadeUp{ from{ opacity:0; transform: translateY(14px); } to{ opacity:1; transform: translateY(0); } }
+  .fade-up{ animation: fadeUp .5s cubic-bezier(.2,.7,.2,1) both; }
+
+  @keyframes modalIn{
+    from{ opacity:0; transform: translateY(14px) scale(.95); }
+    to{ opacity:1; transform: translateY(0) scale(1); }
+  }
+  .modal-in{ animation: modalIn .32s cubic-bezier(.2,.8,.2,1) both; }
+
+  @keyframes overlayIn{ from{ opacity:0; } to{ opacity:1; } }
+  .overlay-in{ animation: overlayIn .25s ease both; }
+
+  .btn-primary{
+    background: linear-gradient(180deg, #FF7A1A 0%, #FF6B00 60%, #E85F00 100%);
+    box-shadow: 0 0 0 1px rgba(255,107,0,0.4), 0 8px 24px -6px rgba(255,107,0,0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+    transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, filter .2s ease;
+  }
+  .btn-primary:hover{ transform: scale(1.015); filter: brightness(1.06); box-shadow: 0 0 0 1px rgba(255,107,0,0.5), 0 10px 32px -6px rgba(255,107,0,0.7), inset 0 1px 0 rgba(255,255,255,0.3); }
+  .btn-primary:active{ transform: scale(.99); }
+  .btn-primary:disabled{ opacity:.6; cursor:not-allowed; transform:none; filter:none; }
+
+  .btn-ghost-glow{
+    box-shadow: 0 0 0 1px rgba(255,107,0,0.45), 0 0 18px rgba(255,107,0,0.2);
+    transition: box-shadow .25s ease, background-color .25s ease;
+  }
+  .btn-ghost-glow:hover{ box-shadow: 0 0 0 1px rgba(255,107,0,0.7), 0 0 26px rgba(255,107,0,0.4); background-color: rgba(255,107,0,0.08); }
+
+  .btn-google{
+    border: 1px solid rgba(255,107,0,0.4);
+    background: rgba(255,107,0,0.04);
+    transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+  }
+  .btn-google:hover{ border-color: rgba(255,107,0,0.75); background-color: rgba(255,107,0,0.09); box-shadow: 0 0 22px rgba(255,107,0,0.25); }
+
+  .glass-card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015));
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,107,0,0.28);
+  }
+  .glass-card:hover{ border-color: rgba(255,107,0,0.55); }
+
+  .glass-modal{
+    background: linear-gradient(180deg, rgba(23,23,26,0.92), rgba(15,15,17,0.96));
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+  }
+
+  .bullet-dot{ box-shadow: 0 0 10px 2px rgba(255,107,0,0.75), 0 0 2px rgba(255,107,0,1); }
+
+  .tab-underline{ position:relative; }
+  .tab-underline.active::after{
+    content:''; position:absolute; right:0; left:0; bottom:-1px; height:2px;
+    background: linear-gradient(90deg, transparent, #FF6B00, transparent);
+  }
+
+  .pro-badge{ background: linear-gradient(135deg, #2a2a2e, #1a1a1c); border: 1px solid rgba(255,107,0,0.5); }
+
+  /* ---- Step guide (left column of hero) ---- */
+  .step-line{
+    position:absolute; top:26px; bottom:26px; right:19px;
+    width:2px;
+    background: linear-gradient(180deg, rgba(255,107,0,0.7), rgba(255,107,0,0.15) 60%, rgba(255,107,0,0.7));
+  }
+  .step-dot{
+    box-shadow: 0 0 0 4px rgba(255,107,0,0.12), 0 0 16px rgba(255,107,0,0.55);
+  }
+
+  /* Gate: interactive elements look normal but are intercepted via JS */
+  .gated{ cursor:pointer; }
+
+  .view-hidden{ display:none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    .ember, .fade-up, .modal-in, .overlay-in, .spinner, .spinner-orange { animation:none !important; }
+  }
+</style>
+</head>
+
+<body class="bg-bb-black text-gray-200 min-h-screen antialiased">
+
+<!-- ============ NAVBAR ============ -->
+<header class="sticky top-0 z-40 backdrop-blur-xl bg-bb-black/70 border-b border-bb-line">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+
+    <div class="flex items-center gap-2 select-none">
+      <div class="w-9 h-9 rounded-xl bg-bb-panel border border-bb-line flex items-center justify-center shadow-glowSm">
+        <span class="font-grotesk font-bold text-bb-orange text-lg leading-none">BB</span>
+      </div>
+      <span class="font-grotesk font-semibold text-white text-lg hidden sm:block">BB</span>
+      <span class="text-[11px] text-gray-500 hidden sm:block mt-1">/ التلخيص الذكي</span>
+    </div>
+
+    <!-- Guest nav action -->
+    <button id="navSignInBtn"
+      class="gated btn-ghost-glow px-5 py-2 rounded-full text-sm font-semibold text-bb-orangeSoft bg-bb-panel/60 hover:text-white transition-colors">
+      تسجيل الدخول
+    </button>
+
+    <!-- Authenticated nav state -->
+    <div id="userChip" class="view-hidden items-center gap-3">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-bb-panel border border-bb-line">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_2px_rgba(52,211,153,0.6)]"></span>
+        <span class="text-sm text-gray-200 font-medium">مستخدم BB</span>
+      </div>
+      <button id="logoutBtn" class="text-xs text-gray-500 hover:text-bb-orangeSoft transition-colors">
+        تسجيل الخروج
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<main class="relative">
+
+  <div class="ember-field h-[620px] top-0">
+    <div class="ember w-[420px] h-[420px] -top-24 right-10"></div>
+    <div class="ember two w-[380px] h-[380px] top-10 left-0"></div>
+    <div class="absolute inset-0 grid-mask"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="relative z-10 max-w-6xl mx-auto px-5 sm:px-8 pt-16 sm:pt-20 pb-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-10 items-center">
+
+      <!-- Right column: headline + CTA -->
+      <div class="text-center lg:text-right order-1">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-bb-orangeSoft bg-bb-orange/10 border border-bb-orange/30 mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-bb-orange bullet-dot"></span>
+          محرك تلخيص فوري بالذكاء الاصطناعي
+        </span>
+
+        <h1 class="font-grotesk font-bold text-3xl sm:text-4xl lg:text-[2.75rem] text-white leading-[1.35] mb-6">
+          نحافظ على وقتك، ونلخص لك كل إيميلاتك بلمحة عين باستخدام الذكاء الاصطناعي
+        </h1>
+
+        <p class="text-gray-400 text-sm sm:text-base max-w-lg mx-auto lg:mx-0 mb-8 leading-7">
+          الصق أي نص طويل — إيميل أو مقال — واحصل فورًا على أهم ٤ نقاط منه، بدون قراءة كلمة واحدة زائدة.
+        </p>
+
+        <button id="heroCtaBtn"
+          class="gated btn-primary inline-flex items-center gap-2 rounded-xl px-8 py-4 text-white font-bold text-base">
+          ابدأ التجربة مجاناً
+          <span class="text-lg">✨</span>
+        </button>
+      </div>
+
+      <!-- Left column: vertical step guide -->
+      <div class="order-2 relative max-w-sm mx-auto lg:mx-0 w-full">
+        <div class="relative pr-2">
+          <div class="step-line"></div>
+
+          <div class="relative flex items-start gap-5 pb-10">
+            <div class="step-dot shrink-0 w-10 h-10 rounded-full bg-bb-panel border border-bb-orange flex items-center justify-center font-grotesk font-bold text-bb-orange text-sm z-10">
+              ١
+            </div>
+            <div class="glass-card rounded-2xl px-5 py-4 flex-1">
+              <h3 class="font-grotesk font-semibold text-white text-sm mb-1">الصق النص</h3>
+              <p class="text-gray-400 text-xs leading-6">انسخ نص الإيميل أو المقال الطويل والصقه في الحقل المخصص.</p>
+            </div>
+          </div>
+
+          <div class="relative flex items-start gap-5 pb-10">
+            <div class="step-dot shrink-0 w-10 h-10 rounded-full bg-bb-panel border border-bb-orange flex items-center justify-center font-grotesk font-bold text-bb-orange text-sm z-10">
+              ٢
+            </div>
+            <div class="glass-card rounded-2xl px-5 py-4 flex-1">
+              <h3 class="font-grotesk font-semibold text-white text-sm mb-1">اضغط زر التلخيص</h3>
+              <p class="text-gray-400 text-xs leading-6">يحلل BB النص فورًا باستخدام نموذج ذكاء اصطناعي متقدم.</p>
+            </div>
+          </div>
+
+          <div class="relative flex items-start gap-5">
+            <div class="step-dot shrink-0 w-10 h-10 rounded-full bg-bb-panel border border-bb-orange flex items-center justify-center font-grotesk font-bold text-bb-orange text-sm z-10">
+              ٣
+            </div>
+            <div class="glass-card rounded-2xl px-5 py-4 flex-1">
+              <h3 class="font-grotesk font-semibold text-white text-sm mb-1">احصل على ٤ نقاط</h3>
+              <p class="text-gray-400 text-xs leading-6">ملخّص مرتّب وواضح، جاهز للقراءة في أقل من دقيقة.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ PLAYGROUND (always visible, gated by JS) ============ -->
+  <section id="playgroundSection" class="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 pb-16">
+    <div class="glass-card rounded-2xl p-4 sm:p-6 shadow-glow">
+
+      <label for="inputText" class="block text-sm font-semibold text-gray-300 mb-2">
+        النص المراد تلخيصه
+      </label>
+
+      <div id="textareaWrap" class="gated glow-border-focus rounded-2xl border border-bb-line bg-[#0F0F11]">
+        <textarea id="inputText" rows="7"
+          class="w-full bg-transparent resize-none rounded-2xl px-4 py-4 text-sm sm:text-[15px] text-gray-100 placeholder-gray-500 leading-7"
+          placeholder="الصق نص الإيميل أو المقال الطويل هنا..."></textarea>
+      </div>
+
+      <div class="flex items-center justify-between mt-2 mb-4 px-1">
+        <span id="charCount" class="text-xs text-gray-600">٠ حرف</span>
+        <span id="inlineError" class="text-xs text-red-400 hidden">الرجاء لصق نص أولاً</span>
+      </div>
+
+      <button id="summarizeBtn"
+        class="gated btn-primary w-full rounded-xl py-4 text-white font-bold text-base flex items-center justify-center gap-3">
+        <span id="btnIdleContent" class="flex items-center gap-2">
+          لخّص النص الآن
+          <span class="text-lg">✨</span>
+        </span>
+        <span id="btnLoadingContent" class="hidden items-center gap-3">
+          <span class="spinner"></span>
+          جاري التلخيص...
+        </span>
+      </button>
+
+      <p id="fetchError" class="hidden text-sm text-red-400 mt-3 text-center">
+        تعذّر الاتصال بالخادم. تأكد أن الخادم يعمل على <span class="font-grotesk" dir="ltr">localhost:5000</span> وحاول مجددًا.
+      </p>
+    </div>
+
+    <div id="resultsSection" class="hidden mt-8">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="w-2 h-2 rounded-full bg-bb-orange bullet-dot"></span>
+        <h2 class="font-grotesk font-semibold text-white text-lg">الملخّص المرتّب</h2>
+        <span class="text-xs text-gray-500 mr-1">٤ نقاط رئيسية</span>
+      </div>
+      <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ PRICING SECTION ============ -->
+<section class="relative border-t border-bb-line bg-bb-panel/40">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8 py-16">
+    <div class="text-center mb-10">
+      <h2 class="font-grotesk font-bold text-2xl sm:text-3xl text-white mb-2">خطط مصمّمة للنمو</h2>
+      <p class="text-gray-400 text-sm">ابدأ مجانًا اليوم، وانتقل لاحقًا إلى الأتمتة الكاملة</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+
+      <div class="relative rounded-2xl border border-bb-orange/40 bg-bb-card p-7 shadow-glowSm">
+        <span class="absolute -top-3 right-6 px-3 py-1 rounded-full text-[11px] font-bold bg-bb-orange text-black">
+          نشطة الآن
+        </span>
+        <h3 class="font-grotesk font-bold text-white text-xl mb-1">الخطة المجانية</h3>
+        <p class="text-gray-500 text-xs mb-6">Free</p>
+        <ul class="space-y-3 text-sm text-gray-300">
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-bb-orange bullet-dot shrink-0"></span>
+            لصق النص يدويًا (نسخ ولصق)
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-bb-orange bullet-dot shrink-0"></span>
+            ملخّص أساسي من ٤ نقاط
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-bb-orange bullet-dot shrink-0"></span>
+            استخدام غير محدود عبر المتصفح
+          </li>
+        </ul>
+      </div>
+
+      <div class="relative rounded-2xl border border-bb-line bg-bb-card/60 p-7 overflow-hidden">
+        <div class="absolute inset-0 opacity-40 grid-mask"></div>
+        <span class="pro-badge relative inline-flex px-3 py-1 rounded-full text-[11px] font-bold text-bb-orangeSoft mb-4">
+          قريباً <span class="text-gray-500 font-normal mx-1">/</span> Pro
+        </span>
+        <h3 class="relative font-grotesk font-bold text-gray-200 text-xl mb-1">الخطة الاحترافية</h3>
+        <p class="relative text-gray-500 text-xs mb-6">Pro</p>
+        <ul class="relative space-y-3 text-sm text-gray-400">
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0"></span>
+            ربط مباشر مع Gmail و Outlook
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0"></span>
+            جلب الرسائل تلقائيًا بدون نسخ يدوي
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-600 shrink-0"></span>
+            ردود ذكية مقترحة بالذكاء الاصطناعي
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-bb-line py-8 text-center text-xs text-gray-600">
+  © 2026 BB — صُنع بعناية لأتمتة بريدك القادمة.
+</footer>
+
+<!-- ============ AUTH GATE MODAL ============ -->
+<div id="authOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overlay-in">
+  <div class="modal-in glass-modal relative w-full max-w-sm rounded-2xl border border-bb-orange/30 shadow-glow p-7">
+
+    <button id="closeAuthBtn" class="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors" aria-label="إغلاق">
+      ✕
+    </button>
+
+    <div class="text-center mb-6">
+      <div class="w-11 h-11 mx-auto rounded-xl bg-bb-card border border-bb-orange/40 flex items-center justify-center shadow-glowSm mb-4">
+        <span class="font-grotesk font-bold text-bb-orange">BB</span>
+      </div>
+      <h3 class="font-grotesk font-bold text-white text-lg mb-2">تسجيل الدخول مطلوب</h3>
+      <p class="text-gray-400 text-sm leading-6">
+        يرجى تسجيل الدخول أولاً للاستفادة من خدمات التلخيص الذكي.
+      </p>
+    </div>
+
+    <!-- Google Sign-In -->
+    <button id="googleAuthBtn" type="button"
+      class="btn-google w-full flex items-center justify-center gap-3 rounded-xl py-3 text-sm font-semibold text-gray-100 mb-4">
+      <svg width="18" height="18" viewBox="0 0 48 48" class="shrink-0">
+        <path fill="#EA4335" d="M24 9.5c3.6 0 6.8 1.2 9.3 3.6l6.9-6.9C36 2.4 30.5 0 24 0 14.9 0 7.1 5.4 3.4 13.1l8 6.2C13.2 13.6 18.1 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.6H24v9.1h12.6c-.5 3-2.2 5.4-4.6 7.1l7.1 5.5c4.2-3.9 6.4-9.6 6.4-17.1z"/>
+        <path fill="#FBBC05" d="M11.4 28.3a14.5 14.5 0 0 1 0-9.3l-8-6.2a24 24 0 0 0 0 21.7l8-6.2z"/>
+        <path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.1-5.5c-2 1.4-4.6 2.2-8.9 2.2-5.9 0-10.8-4.1-12.6-9.8l-8 6.2C7.1 42.6 14.9 48 24 48z"/>
+      </svg>
+      تسجيل الدخول باستخدام Google
+    </button>
+
+    <div class="flex items-center gap-3 my-4">
+      <span class="h-px flex-1 bg-bb-line"></span>
+      <span class="text-[11px] text-gray-600">أو بالبريد الإلكتروني والرمز السري</span>
+      <span class="h-px flex-1 bg-bb-line"></span>
+    </div>
+
+    <!-- Toggle -->
+    <div class="flex items-center justify-center gap-6 mb-5 border-b border-bb-line text-sm font-semibold">
+      <button id="tabLogin" class="tab-underline active pb-2.5 text-white transition-colors">تسجيل الدخول</button>
+      <button id="tabSignup" class="tab-underline pb-2.5 text-gray-500 hover:text-gray-300 transition-colors">إنشاء حساب</button>
+    </div>
+
+    <form id="authForm" class="space-y-3.5">
+      <div id="nameField" class="hidden">
+        <input type="text" placeholder="الاسم الكامل"
+          class="w-full bg-[#0F0F11] border border-bb-line focus:border-bb-orange/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 transition-colors focus:outline-none">
+      </div>
+
+      <input type="email" required placeholder="البريد الإلكتروني" dir="ltr"
+        class="w-full bg-[#0F0F11] border border-bb-line focus:border-bb-orange/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 transition-colors focus:outline-none text-right">
+
+      <input type="password" required placeholder="الرمز السري" dir="ltr"
+        class="w-full bg-[#0F0F11] border border-bb-line focus:border-bb-orange/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 transition-colors focus:outline-none text-right">
+
+      <button type="submit" id="authSubmitBtn"
+        class="btn-primary w-full rounded-xl py-3 text-white font-bold text-sm mt-1 flex items-center justify-center gap-2">
+        <span id="authSubmitIdle">تسجيل الدخول</span>
+        <span id="authSubmitLoading" class="hidden items-center gap-2">
+          <span class="spinner-orange"></span>
+          ...جارٍ التحقق
+        </span>
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  /* =================================================================
+     APP STATE
+     'guest' -> full premium page is visible, but interacting with the
+                CTA / playground opens the gate modal instead of running.
+     'auth'  -> gate is lifted, playground works normally.
+  ================================================================= */
+  let appState = 'guest';
+
+  const navSignInBtn = document.getElementById('navSignInBtn');
+  const userChip = document.getElementById('userChip');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const heroCtaBtn = document.getElementById('heroCtaBtn');
+  const textareaWrap = document.getElementById('textareaWrap');
+  const inputText = document.getElementById('inputText');
+  const summarizeBtn = document.getElementById('summarizeBtn');
+
+  function renderNav(){
+    const authed = appState === 'auth';
+    navSignInBtn.classList.toggle('view-hidden', authed);
+    userChip.classList.toggle('view-hidden', !authed);
+    userChip.classList.toggle('flex', authed);
+  }
+
+  function logIn(){
+    appState = 'auth';
+    renderNav();
+    closeAuth();
+    inputText.focus();
+  }
+
+  function logOut(){
+    appState = 'guest';
+    renderNav();
+    inputText.value = '';
+    charCount.textContent = '٠ حرف';
+    resultsSection.classList.add('hidden');
+    resultsGrid.innerHTML = '';
+  }
+
+  logoutBtn.addEventListener('click', logOut);
+  renderNav();
+
+  /* ---------------- Gate modal ---------------- */
+  const authOverlay = document.getElementById('authOverlay');
+  const closeAuthBtn = document.getElementById('closeAuthBtn');
+  const tabLogin = document.getElementById('tabLogin');
+  const tabSignup = document.getElementById('tabSignup');
+  const authSubmitIdle = document.getElementById('authSubmitIdle');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authSubmitLoading = document.getElementById('authSubmitLoading');
+  const nameField = document.getElementById('nameField');
+  const authForm = document.getElementById('authForm');
+  const googleAuthBtn = document.getElementById('googleAuthBtn');
+
+  function openAuth(){
+    authOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeAuth(){
+    authOverlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  // Every "gated" trigger point in the page.
+  navSignInBtn.addEventListener('click', () => { if (appState !== 'auth') openAuth(); });
+  heroCtaBtn.addEventListener('click', () => { if (appState !== 'auth') openAuth(); });
+  textareaWrap.addEventListener('click', () => { if (appState !== 'auth') { openAuth(); inputText.blur(); } });
+  inputText.addEventListener('focus', () => { if (appState !== 'auth') { openAuth(); inputText.blur(); } });
+
+  closeAuthBtn.addEventListener('click', closeAuth);
+  authOverlay.addEventListener('click', (e) => { if (e.target === authOverlay) closeAuth(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !authOverlay.classList.contains('hidden')) closeAuth(); });
+
+  function setMode(mode){
+    const isLogin = mode === 'login';
+    tabLogin.classList.toggle('active', isLogin);
+    tabSignup.classList.toggle('active', !isLogin);
+    tabLogin.classList.toggle('text-white', isLogin);
+    tabLogin.classList.toggle('text-gray-500', !isLogin);
+    tabSignup.classList.toggle('text-white', !isLogin);
+    tabSignup.classList.toggle('text-gray-500', isLogin);
+    nameField.classList.toggle('hidden', isLogin);
+    authSubmitIdle.textContent = isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب';
+  }
+  tabLogin.addEventListener('click', () => setMode('login'));
+  tabSignup.addEventListener('click', () => setMode('signup'));
+
+  function setAuthSubmitting(v){
+    authSubmitBtn.disabled = v;
+    authSubmitIdle.classList.toggle('hidden', v);
+    authSubmitLoading.classList.toggle('hidden', !v);
+    authSubmitLoading.classList.toggle('flex', v);
+  }
+
+  // Email/password — simulated. Replace with a real API call.
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    setAuthSubmitting(true);
+    setTimeout(() => {
+      setAuthSubmitting(false);
+      logIn();
+    }, 900);
+  });
+
+  // Google sign-in — simulated. Replace with real OAuth.
+  googleAuthBtn.addEventListener('click', () => {
+    googleAuthBtn.disabled = true;
+    const original = googleAuthBtn.innerHTML;
+    googleAuthBtn.innerHTML = `<span class="spinner-orange"></span> ...جارٍ الاتصال بـ Google`;
+    setTimeout(() => {
+      googleAuthBtn.disabled = false;
+      googleAuthBtn.innerHTML = original;
+      logIn();
+    }, 1000);
+  });
+
+  /* ---------------- Playground / Summarizer ---------------- */
+  const charCount = document.getElementById('charCount');
+  const btnIdleContent = document.getElementById('btnIdleContent');
+  const btnLoadingContent = document.getElementById('btnLoadingContent');
+  const inlineError = document.getElementById('inlineError');
+  const fetchError = document.getElementById('fetchError');
+  const resultsSection = document.getElementById('resultsSection');
+  const resultsGrid = document.getElementById('resultsGrid');
+
+  inputText.addEventListener('input', () => {
+    charCount.textContent = `${inputText.value.length.toLocaleString('ar')} حرف`;
+    if (inputText.value.trim().length > 0) inlineError.classList.add('hidden');
+  });
+
+  function setLoading(v){
+    summarizeBtn.disabled = v;
+    btnIdleContent.classList.toggle('hidden', v);
+    btnLoadingContent.classList.toggle('hidden', !v);
+    btnLoadingContent.classList.toggle('flex', v);
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderResults(points){
+    resultsGrid.innerHTML = '';
+    points.forEach((point, i) => {
+      const card = document.createElement('div');
+      card.className = 'glass-card rounded-2xl p-5 fade-up';
+      card.style.animationDelay = `${i * 90}ms`;
+      card.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="mt-1 shrink-0 w-6 h-6 rounded-full bg-bb-orange/10 border border-bb-orange/50 flex items-center justify-center">
+            <span class="w-2 h-2 rounded-full bg-bb-orange bullet-dot"></span>
+          </div>
+          <p class="text-sm sm:text-[15px] text-gray-200 leading-7">${point}</p>
+        </div>
+      `;
+      resultsGrid.appendChild(card);
+    });
+    resultsSection.classList.remove('hidden');
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function handleSummarize(){
+    // Gate: guests are intercepted before anything else runs.
+    if (appState !== 'auth') { openAuth(); return; }
+
+    const text = inputText.value.trim();
+    fetchError.classList.add('hidden');
+
+    if (!text){
+      inlineError.classList.remove('hidden');
+      inputText.focus();
+      return;
+    }
+    inlineError.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+
+      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+
+      const data = await response.json();
+
+      let points = data.summary || data.points || data.results || data.data;
+      if (typeof points === 'string') {
+        points = points.split(/\n+/).map(s => s.replace(/^[-•\d.\)\s]+/, '').trim()).filter(Boolean);
+      }
+      if (!Array.isArray(points) || points.length === 0) {
+        throw new Error('Unexpected response shape');
+      }
+      points = points.slice(0, 4).map(escapeHtml);
+
+      renderResults(points);
+    } catch (err) {
+      console.error('BB summarize error:', err);
+      fetchError.classList.remove('hidden');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  summarizeBtn.addEventListener('click', handleSummarize);
+  inputText.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSummarize();
+  });
+</script>
+
+</body>
+</html>
