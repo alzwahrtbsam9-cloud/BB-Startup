@@ -1,94 +1,53 @@
 /**
- * server.js
- * ---------------------------------------------------------------------------
- * BB AI Backend — main entry point.
- *
- * Endpoints:
- *   GET  /               -> health check
- *   POST /api/summarize  -> summarizes { emailText } into 4 Arabic bullet points
- * ---------------------------------------------------------------------------
+ * دالة إرسال النص إلى خادم Render وتلقي الملخص
+ * انسخ هذه الدالة وضعها في ملف script.js وقم بربطها مع زر أو حدث الإرسال لديك
  */
-
-require('dotenv').config();
-
-const express = require('express');
-const cors = require('cors');
-const { summarizeEmailText } = require('./deepseek.service');
-
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-const MAX_TEXT_LENGTH = 20000; // guard against excessively large payloads
-
-// --------------------------- Global middleware ---------------------------
-app.use(cors()); // enable CORS for all origins
-app.use(express.json({ limit: '2mb' }));
-
-// -------------------------------- Routes ---------------------------------
-
-// Health check
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'BB AI Backend is running smoothly! 🚀',
-  });
-});
-
-// Summarize endpoint
-app.post('/api/summarize', async (req, res) => {
-  const { emailText } = req.body || {};
-
-  // --- Input validation ---
-  if (typeof emailText !== 'string' || emailText.trim().length === 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'الحقل "emailText" مطلوب ويجب أن يكون نصًا غير فارغ.',
-    });
-  }
-
-  if (emailText.length > MAX_TEXT_LENGTH) {
-    return res.status(400).json({
-      success: false,
-      message: `النص طويل جدًا. الحد الأقصى المسموح به هو ${MAX_TEXT_LENGTH} حرفًا.`,
-    });
-  }
-
+async function getEmailSummary(textInput) {
   try {
-    const summary = await summarizeEmailText(emailText.trim());
+    // إظهار حالة التحميل للمستخدم (اختياري)
+    console.log('جاري إرسال النص للتلخيص...');
 
-    return res.status(200).json({
-      success: true,
-      summary, // array of exactly 4 strings
+    const response = await fetch('https://bb-backend-ic38.onrender.com/api/summarize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // لاحظ أننا أرسلنا المفتاح باسم emailText تماماً كما يطلبه الباك إند لديك
+      body: JSON.stringify({ emailText: textInput })
     });
-  } catch (err) {
-    console.error('[/api/summarize] Error:', err.message);
 
-    return res.status(502).json({
-      success: false,
-      message: 'تعذّر إنشاء الملخّص حاليًا. يرجى المحاولة مرة أخرى لاحقًا.',
-    });
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      console.log('تم التلخيص بنجاح:', data.summary);
+      return data.summary; // هذه مصفوفة تحتوي على الـ 4 نقاط الملخصة
+    } else {
+      throw new Error(data.message || 'حدث خطأ غير متوقع');
+    }
+
+  } catch (error) {
+    console.error('خطأ في الاتصال:', error);
+    alert(error.message || 'تعذّر الاتصال بالخادم. حاول مجددًا بعد قليل.');
+    return null;
+  }
+}
+
+// --- مثال على كيفية استخدام الدالة عند الضغط على زر التلخيص ---
+/*
+document.getElementById('myButton').addEventListener('click', async () => {
+  const userText = document.getElementById('myTextArea').value;
+  
+  if (!userText.trim()) {
+    alert('الرجاء إدخال نص أولاً!');
+    return;
+  }
+
+  const summaryPoints = await getEmailSummary(userText);
+  
+  if (summaryPoints) {
+    // عرض النقاط في الشاشة (مثلاً تحويلها إلى قائمة HTML)
+    const resultContainer = document.getElementById('resultArea');
+    resultContainer.innerHTML = '<ul>' + summaryPoints.map(point => `<li>${point}</li>`).join('') + '</ul>';
   }
 });
-
-// --------------------------- 404 fallback route ---------------------------
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'المسار المطلوب غير موجود.',
-  });
-});
-
-// ----------------------- Centralized error handler -------------------------
-// Catches synchronous errors thrown by middleware (e.g. malformed JSON body).
-app.use((err, req, res, next) => {
-  console.error('[Unhandled Error]', err);
-  res.status(500).json({
-    success: false,
-    message: 'حدث خطأ غير متوقع في الخادم.',
-  });
-});
-
-// --------------------------------- Start ----------------------------------
-app.listen(PORT, () => {
-  console.log(`✅ BB AI Backend is listening on http://localhost:${PORT}`);
-});
+*/
